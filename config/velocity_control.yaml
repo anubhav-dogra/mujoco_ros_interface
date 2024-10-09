@@ -1,0 +1,6 @@
+mujoco_interface_node: # NOTE: This must match the node name in the cpp file
+#   ros__parameters:
+  control_mode: TORQUE
+  proportional_gain: 50
+  integral_gain: 0.01
+  derivative_gain: 10

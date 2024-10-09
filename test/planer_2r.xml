@@ -1,0 +1,37 @@
+<mujoco model="planer_2r">
+    <compiler angle="radian" meshdir="assets" autolimits="true" balanceinertia="false"/>
+    <option integrator="implicitfast" >
+    </option>
+
+    <worldbody>
+        <!-- <body name="base" pos="0 0 0.05">
+            <geom type="box" size="0.05 0.05 0.05" pos="-0.05 0.0 0.0" rgba="1 0 0 0.75"/> -->
+
+            <body name="link1" pos="0.0 0 0.05" euler="0 0 0">
+                <inertial mass="1" pos="0.5 0 0" euler="0 1.57 0" diaginertia="0.00166 0.08416 0.08416"/>
+                <joint name="joint1" type="hinge" axis="0 0 1" range="-3.14 3.14"/>
+                <geom type="box" size="0.025 0.025 0.5" pos="0.5 0.0 0.0" euler="0 1.57 0" rgba="0.8 0.6 0.4 0.75"/>
+
+                <!-- <body name="joint_link12" pos="0.5 0 0.0">
+                    <geom type="box" size="0.05 0.05 0.05" rgba="0 1 0 1"/> -->
+
+                    <body name="link2" pos="1.0 0 0" euler="0 0 0">
+                        <joint name="joint2" type="hinge" axis="0 0 1" range="-3.14 3.14"/>
+                        <geom type="box" size="0.025 0.025 0.25" pos="0.25 0 0.0" euler="0 1.57 0" rgba="0.5 0.6 0.4 0.75"/>
+                        <inertial mass="2" pos="0.25 0 0" euler="0 1.57 0" diaginertia="0.0033 0.04333 0.04333"/>
+        
+                    </body>
+                <!-- </body> -->
+            </body>
+        <!-- </body> -->
+    </worldbody>
+
+    <actuator>
+        <general name="pos_actuator1" joint="joint1" ctrlrange="-3.14 3.14" ctrllimited="true"/>
+        <general name="pos_actuator2" joint="joint2" ctrlrange="-3.14 3.14" ctrllimited="true"/>
+    </actuator>
+
+    <keyframe>
+        <key name="home" qpos="0 0" ctrl="0 0"/>
+    </keyframe>
+</mujoco>

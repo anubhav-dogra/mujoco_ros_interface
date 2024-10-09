@@ -1,0 +1,31 @@
+<mujoco>
+
+<!-- <option timestep=".0005"/> -->
+<option solver="CG"/>
+<extension>
+   <plugin plugin="mujoco.elasticity.solid"/>
+</extension>
+
+<worldbody>
+
+   <!-- <flexcomp type="box" count="3 3 3" spacing=".1 .1 .1"  pos="0.5 0 0.1"
+             radius=".0" rgba="0 .7 .7 1" name="softbody" dim="3" mass="1">
+      <contact condim="3" solref="0.01 1" solimp=".95 .99 .0001" selfcollide="none" internal="false"/>
+      <edge damping="1"/>
+      <plugin plugin="mujoco.elasticity.solid">
+         <config key="poisson" value="0.2"/>
+         <config key="young" value="5e4"/>
+      </plugin>
+   </flexcomp> -->
+   <!-- <body pos="0.55 0 0.06">
+  <composite type="ellipsoid" count="15 15 5" spacing="0.03">
+    <skin texcoord="true" material="orange" rgba=".7 .7 .7 0.25"/>
+    <geom type="ellipsoid" size="0.001 0.001 0.0003" rgba=".8 .2 .1 0.25" mass="1"/>
+  </composite>
+</body> -->
+<body name= "rigidbody" pos="0.55 0 0.08">
+   <geom type="ellipsoid" size="0.1 0.1 0.05" rgba="1.0 1.0 1.0 0.25" mass="1"/>
+</body>
+</worldbody>f
+
+</mujoco>

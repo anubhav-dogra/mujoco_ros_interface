@@ -1,0 +1,218 @@
+<mujoco model="iiwa14">
+  <compiler angle="radian" meshdir="assets" autolimits="true"/>
+
+  <option integrator="implicitfast">
+    <flag gravity="enable"/>
+  </option>
+
+  <default>
+    <default class="iiwa">
+      <material specular="0.5" shininess="0.25"/>
+      <joint axis="0 0 1"/>
+      <!-- <general gaintype="fixed" biastype="affine" gainprm="2000" biasprm="0 -2000 -200"/>  -->
+      <general dyntype="none" gaintype="fixed" biastype="none" dynprm="1 0 0" gainprm="1 0 0" biasprm="0 0 0"/>
+      <default class="joint1">
+        <joint type="hinge" range="-2.96706 2.96706" damping="10." />
+        <general ctrllimited="true" />
+        <default class="joint2">
+          <joint type="hinge" range="-2.0944 2.0944" damping="10."/>
+          <general ctrllimited="true"/>
+        </default>
+      </default>
+      <default class="joint3">
+        <joint type="hinge" range="-3.05433 3.05433" damping="10."/>
+        <general ctrllimited="true"/>
+      </default>
+      <default class="visual">
+        <geom type="mesh" contype="0" conaffinity="0" group="2" material="gray"/>
+      </default>
+      <default class="collision">
+        <geom group="3"/>
+      </default>
+      <site size="0.001" rgba="1 0 0 1" group="4"/>
+    </default>
+  </default>
+
+  <asset>
+    <!-- <texture name="texplane" type="2d" builtin="checker" rgb1=".25 .25 .25" rgb2=".3 .3 .3" width="512" height="512" mark="cross" markrgb=".8 .8 .8"/> -->
+    <material class="iiwa" name="gray" rgba="0.4 0.4 0.4 1"/>
+    <material class="iiwa" name="light_gray" rgba="0.6 0.6 0.6 1"/>
+    <material class="iiwa" name="black" rgba="0 0 0 1"/>
+    <material class="iiwa" name="orange" rgba="1 0.423529 0.0392157 1"/>
+    <!-- <material name="matplane" reflectance="0.3" texture="texplane" texrepeat="1 1" texuniform="true"/> -->
+
+    <mesh file="link_0.obj"/>
+    <mesh file="link_1.obj"/>
+    <mesh file="link_2_orange.obj"/>
+    <mesh file="link_2_grey.obj"/>
+    <mesh file="link_3.obj"/>
+    <mesh file="band.obj"/>
+    <mesh file="kuka.obj"/>
+    <mesh file="link_4_orange.obj"/>
+    <mesh file="link_4_grey.obj"/>
+    <mesh file="link_5.obj"/>
+    <mesh file="link_6_orange.obj"/>
+    <mesh file="link_6_grey.obj"/>
+    <mesh file="link_7.obj"/>
+    <mesh file="ft_sensor_mount.STL"/>
+    <mesh file="baseplate_picobot2.STL" scale="0.001 0.001 0.001"/>
+    <mesh file="shell_camera_mounting_picobot2.STL" scale="0.001 0.001 0.001"/> 
+    <mesh file="nose_picobot2.STL" scale="0.001 0.001 0.001"/>
+  </asset>
+
+  <worldbody>
+    <light name="top" pos="0 0 2" mode="trackcom"/>
+    <!-- <geom name="new_floor" pos="0 0 -0.005" size="0 0 0.01" type="plane" material="matplane"/> -->
+    <body name="base" childclass="iiwa" >
+      <inertial mass="5" pos="-0.1 0 0.07" diaginertia="0.05 0.06 0.03"/>
+      <geom class="visual" mesh="link_0"/>
+      <geom class="collision" size="0.12" pos="0 0 0.03"/>
+      <geom class="collision" size="0.08" pos="-0.08 0 0.103"/>
+      <geom class="collision" size="0.08" pos="-0.08 0 0.04"/>
+      <geom class="collision" size="0.1" pos="0 0 0.14"/>
+      <body name="link1" pos="0 0 0.1575">
+        <inertial mass="5.76" pos="0 -0.03 0.12" diaginertia="0.0333 0.033 0.0123"/>
+        <joint name="iiwa_joint_1" class="joint1"/>
+        <geom class="visual" mesh="link_1"/>
+        <geom class="collision" size="0.08" pos="0 0 -0.0005"/>
+        <geom class="collision" size="0.075" pos="0.01 -0.025 0.0425"/>
+        <geom class="collision" size="0.075" pos="-0.01 -0.025 0.0425"/>
+        <geom class="collision" size="0.07" pos="0.01 -0.045 0.1025"/>
+        <geom class="collision" size="0.07" pos="-0.01 -0.045 0.1025"/>
+        <body name="link2" pos="0 0 0.2025" quat="0 0 1 1">
+          <inertial mass="6.35" pos="0.0003 0.059 0.042" diaginertia="0.0305 0.0304 0.011" quat="0 0 1 1"/>
+          <joint name="iiwa_joint_2" class="joint2"/>
+          <geom class="visual" material="orange" mesh="link_2_orange"/>
+          <geom class="visual" mesh="link_2_grey"/>
+          <geom class="collision" size="0.095" pos="0 0 -0.01"/>
+          <geom class="collision" size="0.09" pos="0 0 0.045"/>
+          <geom class="collision" size="0.07" pos="-0.01 0.04 0.054"/>
+          <geom class="collision" size="0.065" pos="-0.01 0.09 0.04"/>
+          <geom class="collision" size="0.065" pos="-0.01 0.13 0.02"/>
+          <geom class="collision" size="0.07" pos="0.01 0.04 0.054"/>
+          <geom class="collision" size="0.065" pos="0.01 0.09 0.04"/>
+          <geom class="collision" size="0.065" pos="0.01 0.13 0.02"/>
+          <geom class="collision" size="0.075" pos="0 0.18 0"/>
+          <body name="link3" pos="0 0.2045 0" quat="0 0 1 1">
+            <inertial mass="3.5" pos="0 0.03 0.13" diaginertia="0.025 0.0238 0.0076"/>
+            <joint name="iiwa_joint_3" class="joint1"/>
+            <geom class="visual" mesh="link_3"/>
+            <geom class="visual" material="light_gray" mesh="band"/>
+            <geom class="visual" material="black" mesh="kuka"/>
+            <geom class="collision" size="0.075" pos="0 0 0.0355"/>
+            <geom class="collision" size="0.06" pos="0.01 0.023 0.0855"/>
+            <geom class="collision" size="0.055" pos="0.01 0.048 0.1255"/>
+            <geom class="collision" size="0.06" pos="0.01 0.056 0.1755"/>
+            <geom class="collision" size="0.06" pos="-0.01 0.023 0.0855"/>
+            <geom class="collision" size="0.055" pos="-0.01 0.048 0.1255"/>
+            <geom class="collision" size="0.06" pos="-0.01 0.056 0.1755"/>
+            <geom class="collision" size="0.075" pos="0 0.045 0.2155"/>
+            <geom class="collision" size="0.075" pos="0 0 0.2155"/>
+            <body name="link4" pos="0 0 0.2155" quat="1 1 0 0">
+              <inertial mass="3.5" pos="0 0.067 0.034" diaginertia="0.017 0.0164 0.006" quat="1 1 0 0"/>
+              <joint name="iiwa_joint_4"  class="joint2"/>
+              <geom class="visual" material="orange" mesh="link_4_orange"/>
+              <geom class="visual" mesh="link_4_grey"/>
+              <geom class="collision" size="0.078" pos="0 0.01 0.046"/>
+              <geom class="collision" size="0.06" pos="0.01 0.06 0.052"/>
+              <geom class="collision" size="0.065" pos="0.01 0.12 0.034"/>
+              <geom class="collision" size="0.06" pos="-0.01 0.06 0.052"/>
+              <geom class="collision" size="0.065" pos="-0.01 0.12 0.034"/>
+              <geom class="collision" size="0.075" pos="0 0.184 0"/>
+              <body name="link5" pos="0 0.1845 0" quat="0 0 1 1">
+                <inertial mass="3.5" pos="0.0001 0.021 0.076" diaginertia="0.01 0.0087 0.00449"/>
+                <joint name="iiwa_joint_5" class="joint1"/>
+                <geom class="visual" mesh="link_5"/>
+                <geom class="visual" material="light_gray" mesh="band"/>
+                <geom class="visual" material="black" mesh="kuka"/>
+                <geom class="collision" size="0.075" pos="0 0 0.0335"/>
+                <geom class="collision" size="0.05" pos="-0.012 0.031 0.0755"/>
+                <geom class="collision" size="0.05" pos="0.012 0.031 0.0755"/>
+                <geom class="collision" size="0.04" pos="-0.012 0.06 0.1155"/>
+                <geom class="collision" size="0.04" pos="0.012 0.06 0.1155"/>
+                <geom class="collision" size="0.04" pos="-0.01 0.065 0.1655"/>
+                <geom class="collision" size="0.04" pos="0.01 0.065 0.1655"/>
+                <geom class="collision" size="0.035" pos="-0.012 0.065 0.1855"/>
+                <geom class="collision" size="0.035" pos="0.012 0.065 0.1855"/>
+                <body name="link6" pos="0 0 0.2155" quat="1 1 0 0">
+                  <inertial mass="1.8" pos="0 0.0006 0.0004" diaginertia="0.0049 0.0047 0.0036" quat="1 1 0 0"/>
+                  <joint name="iiwa_joint_6" class="joint2"/>
+                  <geom class="visual" material="orange" mesh="link_6_orange"/>
+                  <geom class="visual" mesh="link_6_grey"/>
+                  <geom class="collision" size="0.055" pos="0 0 -0.059"/>
+                  <geom class="collision" size="0.065" pos="0 -0.03 0.011"/>
+                  <geom class="collision" size="0.08"/>
+                  <body name="link7" pos="0 0.081 0" quat="0 0 1 1">
+                    <inertial mass="1.2" pos="0 0 0.02" diaginertia="0.001 0.001 0.001"/>
+                    <joint name="iiwa_joint_7" class="joint3"/>
+                    <geom class="visual" mesh="link_7"/>
+                    <geom class="collision" size="0.06" pos="0 0 0.001"/>
+                    <site pos="0 0 0.045" name="attachment_site"/>
+                      <body name="ft_sensor" pos="-0.038 -0.038 0.0451">
+                          <geom class="visual" mesh="ft_sensor_mount" />
+                          <geom class="collision" type="cylinder" size="0.06 0.0225" pos="0.038 0.038 0.021"/>
+                          <!-- <site pos="0.038 0.038 0.045" name="ft_sensor_site" group="4"/> -->
+                          <body name="picobot_probe" pos="0.038 0.038 0.">
+                            <site pos="0.0 0.0 0.045" name="ft_sensor_site" group="4"/>
+                            <inertial mass="3.1" pos="0.015 0.005 0.05" diaginertia="0.01 0.01 0.01"/>
+                            <geom class="visual" material="light_gray" mesh="baseplate_picobot2" pos="0.0 0.0 0.0585" quat="0 1 0 0"/>
+                            <geom class="visual" material="light_gray" mesh="shell_camera_mounting_picobot2" pos="0.0 0.0 0.065" quat="0 0 0 1"/>
+                            <geom class="visual" material="light_gray" mesh="nose_picobot2" pos="0.0 0.0 0.065" quat="0 0 0 1"/>
+                            <geom class="collision" type="cylinder" size="0.12 0.1" pos="0.0 0.0 0.14" quat="0 0 0 1"/>
+                            <geom class="collision" type="box" size="0.055 0.025 0.008" pos="0.0375 -0.105 0.055"/>
+                            <geom class="collision" type="cylinder" size="0.02 0.01" pos="0.0 0.0 0.316"/>
+                            <geom class="collision" type="cylinder" size="0.035 0.01" pos="0.0 0.0 0.3"/>
+                            <geom class="collision" type="cylinder" size="0.05 0.01" pos="0.0 0.0 0.29"/>
+                            <geom class="collision" type="cylinder" size="0.065 0.01" pos="0.0 0.0 0.28"/>
+                            <geom class="collision" type="cylinder" size="0.08 0.01" pos="0.0 0.0 0.27"/>
+                            <geom class="collision" type="cylinder" size="0.095 0.01" pos="0.0 0.0 0.26"/>
+                            <geom class="collision" type="cylinder" size="0.105 0.01" pos="0.0 0.0 0.25"/>
+                            <!-- <site pos="0.0 0.0 0.3255" name="tool_tip_site" group="4"/> -->
+                          <body name="tool_link_ee" pos="0.0 0.0 0.3255" >
+                            <site pos="0.0 0.0 0." name="tool_tip_site" group="4"/>
+                            <inertial mass="0.0001" pos="0 0 0" diaginertia="0 0 0"/>
+                            <geom type="cylinder" size="0.017 0.0005" rgba="0 1 0 1"/>
+                            </body>
+                          </body>
+                      </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+
+  <sensor>
+    <force name="force_sensor" site="ft_sensor_site"/>
+    <torque name= "torque_sensor" site="ft_sensor_site"/>
+  </sensor>
+  
+
+  <contact>
+    <exclude body1="base" body2="link1"/>
+    <exclude body1="base" body2="link2"/>
+    <exclude body1="base" body2="link3"/>
+    <exclude body1="link1" body2="link3"/>
+    <exclude body1="link3" body2="link5"/>
+    <exclude body1="link4" body2="link7"/>
+    <exclude body1="link5" body2="link7"/>
+  </contact>
+
+  <actuator>
+    <general name="actuator1" joint="iiwa_joint_1" class="joint1" ctrlrange="-320 320"/>
+    <general name="actuator2" joint="iiwa_joint_2" class="joint2" ctrlrange="-320 320"/>
+    <general name="actuator3" joint="iiwa_joint_3" class="joint1" ctrlrange="-176 176"/>
+    <general name="actuator4" joint="iiwa_joint_4" class="joint2" ctrlrange="-176 176"/>
+    <general name="actuator5" joint="iiwa_joint_5" class="joint1" ctrlrange="-110 110"/>
+    <general name="actuator6" joint="iiwa_joint_6" class="joint2" ctrlrange="-40 40"/>
+    <general name="actuator7" joint="iiwa_joint_7" class="joint3" ctrlrange="-40 40"/>
+  </actuator>
+
+  <keyframe>
+    <!-- <key name="home" qpos="0.1577 -0.6797 -0.25217 1.3539 3.313 1.129 -1.68599" ctrl="0.0 0.0 0.0 0.0 0.0 0.0 0.0"/> -->
+    <!-- <key name="home" qpos="-0.88 0.5327 -1.8212 1.4725 -0.5148 -1.53 -1.1465" ctrl="0.0 0.0 0.0 0.0 0.0 0.0 0.0"/> -->
+  </keyframe>
+</mujoco>

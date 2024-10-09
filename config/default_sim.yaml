@@ -1,0 +1,9 @@
+mujoco_interface_node:
+#   ros__parameters:
+  publisher_name: 'joint_states'
+  end_effector_state_publisher_name: 'eef_pose'
+  subscriber_name: 'joint_commands'
+  end_effector_name: 'tool_link_ee'
+  plugin_directory: '/home/terabotics/mujoco_ws/src/mujoco/mujoco-3.2.3/bin/mujoco_plugin'
+  simulation_frequency: 1500
+  visualization_frequency: 20

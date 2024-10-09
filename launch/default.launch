@@ -1,0 +1,56 @@
+<launch>
+    <arg name="xml_path" default="/home/terabotics/mujoco_ws/src/mujoco_ros_interface/test/scene.xml"/>
+
+    <rosparam file="$(find mujoco_ros_interface)/config/default_sim.yaml" command="load"/>
+
+    <rosparam file="$(find mujoco_ros_interface)/config/default_camera.yaml" command="load"/>
+
+    <rosparam file="$(find mujoco_ros_interface)/config/velocity_control.yaml" command="load"/>
+
+    <!-- Node configuration -->
+    <node name="mujoco_interface_node" pkg="mujoco_ros_interface" type="mujoco_interface_node" output="screen">
+        <param name="xml_path" value="$(arg xml_path)"/>
+        <remap from= "/mujoco_interface_node/joint_states" to="/joint_states"/>
+        <!-- <remap from= "/mujoco_interface_node/joint_commands" to="/CartesianImpedance_trajectory_controller/commanded_torques"/> -->
+        <remap from="/mujoco_interface_node/mujoco_f_t_sensor" to="netft_data"/>
+    </node>
+
+    <include file="$(find tera_iiwa_ros)/launch/cam_viz.launch">
+    </include>
+    <include file="$(find tera_iiwa_ros)/launch/init_robot_motion.launch">
+    </include>
+
+    <arg name="robot_name" default="iiwa"/>
+    <arg name="model" default="iiwa14" />
+
+    <arg name="controller" default="CartesianImpedance_trajectory_controller"/>
+    <arg name="hardware_interface" default="EffortJointInterface"/>
+    
+    <!-- Upload iiwa URDF -->
+    <!-- <include file="$(find iiwa_description)/launch/$(arg model)_upload.launch"> -->
+    <include file="$(find iiwa_description)/launch/$(arg model)_picobot_tool_upload.launch">
+    <arg name="hardware_interface" value="$(arg hardware_interface)"/>
+    <arg name="robot_name" value="$(arg robot_name)"/>
+    </include>
+
+     <!-- convert joint states to TF transforms for rviz, etc -->
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"
+        respawn="false" output="screen">
+        <remap from="/joint_states" to="/joint_states" />
+    </node>
+
+    <!-- Spawn iiwa service -->
+    <!-- <include file="$(find iiwa_tools)/launch/iiwa_service.launch"/> -->
+
+        <!-- Load joint controller configurations from YAML file to parameter server -->
+    <rosparam file="$(find mujoco_ros_interface)/config/iiwa_control_mujoco.yaml" command="load"/>
+
+    <!-- load the controllers -->
+    <node name="iiwa" pkg="mujoco_ros_interface" type="iiwa" output="screen"/>
+    
+    <node name="iiwa_controller" pkg="controller_manager" type="spawner" respawn="false"
+        output="screen" ns="/iiwa" args="/iiwa/$(arg controller)"/>
+
+    <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find mujoco_ros_interface)/config/mujoco_ros.rviz"/> -->
+
+</launch>

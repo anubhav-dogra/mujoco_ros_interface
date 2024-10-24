@@ -116,8 +116,8 @@ MujocoInterface::MujocoInterface(const std::string &xmlLocation,
     glfwSetScrollCallback(_window, MujocoInterface::scrollCallback);
 
     // visualize contact force
-    _renderingOptions.flags[mjVIS_CONTACTFORCE] = 1;
-    _model->vis.map.force = 0.02;
+    // _renderingOptions.flags[mjVIS_CONTACTFORCE] = 1;
+    // _model->vis.map.force = 0.05;
 
     // Install control callback for gravity compensation
     // mjcb_control = MujocoInterface::controlCallback;

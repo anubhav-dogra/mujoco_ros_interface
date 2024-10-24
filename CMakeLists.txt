@@ -12,7 +12,8 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs                                           # sensor_msgs::JointState
   std_msgs                                              # std_msgs::Float64MultiArray
   controller_manager                                    # controller_manager::ControllerManager
-)
+  tf2_ros
+  )
 
 find_package(glfw3 REQUIRED)                            # Graphics Library FrameWork
 
@@ -39,16 +40,24 @@ add_executable(mujoco_interface_node src/mujoco_interface_node.cpp
 
 add_executable(iiwa src/mujoco_hw_interface_node.cpp)
 
+add_executable(contact_force_control src/contact_force_control.cpp)
+
                                      
 target_link_libraries(mujoco_hw_interface ${catkin_LIBRARIES})
 target_link_libraries(mujoco_interface_node mujoco glfw ${catkin_LIBRARIES})
 target_link_libraries(iiwa mujoco_hw_interface ${catkin_LIBRARIES})
+target_link_libraries(contact_force_control ${catkin_LIBRARIES})
 
 add_dependencies(mujoco_hw_interface ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 # Specify additional locations of header files
 include_directories(
   include 
   ${catkin_INCLUDE_DIRS})
+
+catkin_install_python(PROGRAMS
+  scripts/grav_comp.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 # Install rules
 # install(TARGETS mujoco_interface_node

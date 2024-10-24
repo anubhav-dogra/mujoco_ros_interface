@@ -15,6 +15,9 @@
         <remap from="/mujoco_interface_node/mujoco_f_t_sensor" to="netft_data"/>
     </node>
 
+    <node name="grav_comp" pkg="mujoco_ros_interface" type="grav_comp.py" output="screen">
+    </node>
+
     <include file="$(find tera_iiwa_ros)/launch/cam_viz.launch">
     </include>
     <include file="$(find tera_iiwa_ros)/launch/init_robot_motion.launch">

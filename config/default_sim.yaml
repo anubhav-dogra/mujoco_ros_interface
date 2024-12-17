@@ -5,5 +5,5 @@ mujoco_interface_node:
   subscriber_name: 'joint_commands'
   end_effector_name: 'tool_link_ee'
   plugin_directory: '/home/terabotics/mujoco_ws/src/mujoco/mujoco-3.2.3/bin/mujoco_plugin'
-  simulation_frequency: 1000
+  simulation_frequency: 500
   visualization_frequency: 20

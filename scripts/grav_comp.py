@@ -147,7 +147,7 @@ class GravityCompensationNode:
 
     def publish(self):
         while not rospy.is_shutdown():
-            self.pub.publish(self.out)
+            self.pub.publish(self.transformed_wrench)
             self.pub_check.publish(self.out_check)
             self.rate.sleep()
 

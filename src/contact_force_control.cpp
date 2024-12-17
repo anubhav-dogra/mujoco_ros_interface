@@ -29,7 +29,7 @@ class ContactForceControl{
             tf2::convert(transformStamped_base_to_end.transform.rotation, previous_quat);
             previous_quat.normalize();
             pub_ = nh.advertise<geometry_msgs::PoseStamped>("/iiwa/CartesianImpedance_trajectory_controller/reference_pose", 1);
-            sub_ = nh.subscribe("/cartesian_wrench_tool", 1, &ContactForceControl::callback, this);
+            sub_ = nh.subscribe("/cartesian_wrench_tool_biased", 1, &ContactForceControl::callback, this);
             
         }
 

@@ -1,4 +1,9 @@
 ### MujocoInterface
+
+It was necessary to link the library during run time. 
+`echo 'export LD_LIBRARY_PATH=/opt/mujoco/mujoco-3.2.6/lib:$LD_LIBRARY_PATH' >> ~/.bashrc`
+`source ~/.bashrc`
+
 every message length is taken from _model->nu rather than nq, coz number of joints are alot more if soft body is added!
 
 #### plugin is required to load if using plugins in xml.

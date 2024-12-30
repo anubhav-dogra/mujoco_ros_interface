@@ -1,6 +1,6 @@
 
 #include <mujoco_ros_interface/MujocoInterface.h>
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 
 MujocoInterface* MujocoInterface::instance = nullptr;
 
@@ -17,13 +17,15 @@ MujocoInterface::MujocoInterface(const std::string &xmlLocation,
                                  ControlMode controlMode,
                                  int simulationFrequency,
                                  int visualizationFrequency)
-                                 : _controlMode(controlMode),
-                                   _simFrequency(simulationFrequency)
-                                //    stop_vis_thread_(false)
+    : Node("mujoco_interface_main"),
+        _controlMode(controlMode),
+        _simFrequency(simulationFrequency)
 {
-    // Initialize ROS1 node handle
-    _nh = ros::NodeHandle("~");  
+    // Initialize ROS2 node handle
+    RCLCPP_INFO(this->get_logger(), "Initializing Mujoco Interface...");
+    
     instance = this;
+    
 
     // load all plugins before loading model!!   
     // mj_loadPluginLibrary("/home/terabotics/mujoco_ws/src/mujoco/mujoco-3.2.3/bin/mujoco_plugin/libelasticity.so");
@@ -35,8 +37,9 @@ MujocoInterface::MujocoInterface(const std::string &xmlLocation,
 
     if (!_model)
     {
-        ROS_ERROR("Error loading model: %s", error);
-        ros::shutdown();
+        RCLCPP_ERROR(this->get_logger(),"Error loading model: %s", error);
+        rclcpp::shutdown();
+        return;
     }
 
     _jointState = mj_makeData(_model);  // Initialize joint state
@@ -69,18 +72,17 @@ MujocoInterface::MujocoInterface(const std::string &xmlLocation,
     }
 
     // Create joint state publisher and joint command subscriber
-    _jointStatePublisher = _nh.advertise<sensor_msgs::JointState>(jointStateTopicName, 1);
-
-    _endeffectorPosePublisher = _nh.advertise<geometry_msgs::PoseStamped>(endEffectorStatePoseTopicName, 1);
-    
-    _jointCommandSubscriber = _nh.subscribe(jointControlTopicName, 1, &MujocoInterface::joint_command_callback, this);
-
-    _f_t_sensorPublisher = _nh.advertise<geometry_msgs::WrenchStamped>("mujoco_f_t_sensor", 1);
+    _jointStatePublisherPtr = this->create_publisher<sensor_msgs::msg::JointState>(jointStateTopicName, 1);
+    _endeffectorPosePublisherPtr = this->create_publisher<geometry_msgs::msg::PoseStamped>(endEffectorStatePoseTopicName, 1);
+    _f_t_sensorPublisherPtr = this->create_publisher<geometry_msgs::msg::WrenchStamped>("mujoco_f_t_sensor", 1);
+    _jointCommandSubscriberPtr = this->create_subscription<std_msgs::msg::Float64MultiArray>(jointControlTopicName, 1,
+                                                         std::bind(&MujocoInterface::joint_command_callback, this, std::placeholders::_1));
+ 
     // Initialize Graphics Library FrameWork (GLFW)
     if (!glfwInit())
     {
-        ROS_ERROR("Failed to initialize Graphics Library FrameWork (GLFW).");
-        ros::shutdown();
+        RCLCPP_ERROR(this->get_logger(), "Failed to initialize Graphics Library FrameWork (GLFW).");
+        rclcpp::shutdown();
         return;
     }
 
@@ -88,9 +90,9 @@ MujocoInterface::MujocoInterface(const std::string &xmlLocation,
     _window = glfwCreateWindow(1200, 900, "MuJoCo Visualization", nullptr, nullptr);
     if (!_window)
     {
-        ROS_ERROR("Failed to create GLFW window");
+        RCLCPP_ERROR(this->get_logger(), "Failed to create GLFW window");
         glfwTerminate();
-        ros::shutdown();
+        rclcpp::shutdown();
         return;
     }
 
@@ -123,8 +125,8 @@ MujocoInterface::MujocoInterface(const std::string &xmlLocation,
     // mjcb_control = MujocoInterface::controlCallback;
 
     // Create timers
-    _simTimer = _nh.createTimer(ros::Duration(1.0 / simulationFrequency), &MujocoInterface::update_simulation, this);
-    _visTimer = _nh.createTimer(ros::Duration(1.0 / visualizationFrequency), &MujocoInterface::update_visualization, this);
+    _simTimer = this->create_wall_timer(std::chrono::milliseconds(static_cast<int>(1000 / simulationFrequency)), std::bind(&MujocoInterface::update_simulation, this));
+    _visTimer = this->create_wall_timer(std::chrono::milliseconds(static_cast<int>(1000 / visualizationFrequency)), std::bind(&MujocoInterface::update_visualization, this));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -155,7 +157,7 @@ bool MujocoInterface::set_feedback_gains(const double &proportional,
 {
     if(proportional < 0 or integral < 0 or derivative < 0)
     {
-        ROS_WARN("Gains cannot be negative.");
+        RCLCPP_WARN(this->get_logger(), "Gains cannot be negative.");
         return false;
     }
     else
@@ -237,7 +239,7 @@ void MujocoInterface::setJointCommands(const std::vector<double>& efforts)
 {
     // mj_step(_model, _jointState);
     if (efforts.size() != _model->nu) {
-        ROS_ERROR("Size of efforts vector does not match the number of actuated joints.");
+        RCLCPP_WARN(this->get_logger(), "Size of efforts vector does not match the number of actuated joints.");
         return;
     }
     // std::cout << "command_recieved" << efforts[1] <<std::endl;
@@ -250,12 +252,12 @@ void MujocoInterface::setJointCommands(const std::vector<double>& efforts)
 
 //                                    Update the simulation                                       //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-void MujocoInterface::update_simulation(const ros::TimerEvent&)
+void MujocoInterface::update_simulation()
 {
     // std::lock_guard<std::mutex> lock(mtx_);  // Ensure thread safety
     if(!_model || !_jointState)
     {
-        ROS_ERROR("MuJoCo model or data is not initialized.");
+        RCLCPP_ERROR(this->get_logger(), "MuJoCo model or data is not initialized.");
         return;
     }
     
@@ -309,8 +311,9 @@ void MujocoInterface::update_simulation(const ros::TimerEvent&)
         }
         default:
         {
-            for(int i = 0; i < _model->nu; i++) _jointState->ctrl[i] = 0.0;                         // Don't move?
-            ROS_WARN_THROTTLE(0.1, "Unknown control mode.");
+            for(int i = 0; i < _model->nu; i++) _jointState->ctrl[i] = 0.0;     
+            rclcpp::Clock::SharedPtr clock = this->get_clock();                    // Don't move?
+            RCLCPP_WARN_THROTTLE(this->get_logger(), *clock, 0.1, "Unknown control mode.");
             break;
         }
     }
@@ -318,7 +321,7 @@ void MujocoInterface::update_simulation(const ros::TimerEvent&)
     mj_step(_model, _jointState);  // Take a step in the simulation
     // std::cout << "After mj_step: " << _jointState->qpos[0] << std::endl;
     // Add joint state data to ROS1 message, then publish
-    _jointStateMessage.header.stamp = ros::Time::now();
+    _jointStateMessage.header.stamp = clock.now();
     _jointStateMessage.header.frame_id = "world";
     for(int i = 0; i < _model->nu; i++)
     {
@@ -327,13 +330,13 @@ void MujocoInterface::update_simulation(const ros::TimerEvent&)
         _jointStateMessage.effort[i]   = _jointState->actuator_force[i];
     }
     
-    _jointStatePublisher.publish(_jointStateMessage);  // As it says
+    _jointStatePublisherPtr->publish(_jointStateMessage);  // As it says
 
   
     mjtNum* body_position = _jointState->xpos + 3*_endeffector_bodyId;
     mjtNum* body_orientation = _jointState->xquat + 4*_endeffector_bodyId;
 
-    _endeffectorPoseMessage.header.stamp = ros::Time::now();
+    _endeffectorPoseMessage.header.stamp = clock.now();
     _endeffectorPoseMessage.header.frame_id = "world";
     _endeffectorPoseMessage.pose.position.x = body_position[0];
     _endeffectorPoseMessage.pose.position.y = body_position[1];
@@ -343,10 +346,10 @@ void MujocoInterface::update_simulation(const ros::TimerEvent&)
     _endeffectorPoseMessage.pose.orientation.y = body_orientation[2];
     _endeffectorPoseMessage.pose.orientation.z = body_orientation[3];
 
-    _endeffectorPosePublisher.publish(_endeffectorPoseMessage);
+    _endeffectorPosePublisherPtr->publish(_endeffectorPoseMessage);
 
     
-    _f_t_sensorMessage.header.stamp = ros::Time::now();
+    _f_t_sensorMessage.header.stamp = clock.now();
     _f_t_sensorMessage.header.frame_id = "sensor_link";
     _f_t_sensorMessage.wrench.force.x = _jointState->sensordata[0];
     _f_t_sensorMessage.wrench.force.y = _jointState->sensordata[1];
@@ -354,13 +357,13 @@ void MujocoInterface::update_simulation(const ros::TimerEvent&)
     _f_t_sensorMessage.wrench.torque.x = _jointState->sensordata[3];
     _f_t_sensorMessage.wrench.torque.y = _jointState->sensordata[4];
     _f_t_sensorMessage.wrench.torque.z = _jointState->sensordata[5];
-    _f_t_sensorPublisher.publish(_f_t_sensorMessage);
+    _f_t_sensorPublisherPtr->publish(_f_t_sensorMessage);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                    Update the 3D simulation                                    //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-void MujocoInterface::update_visualization(const ros::TimerEvent&)
+void MujocoInterface::update_visualization()
 {
     {
         glfwMakeContextCurrent(_window);  // Ensure OpenGL context is current
@@ -384,11 +387,12 @@ void MujocoInterface::update_visualization(const ros::TimerEvent&)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                    Handle joint commands                                       //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-void MujocoInterface::joint_command_callback(const std_msgs::Float64MultiArray::ConstPtr msg)
+void MujocoInterface::joint_command_callback(const std_msgs::msg::Float64MultiArray::SharedPtr msg)
 { 
     if (msg->data.size() != _model->nu)  // Expecting one more element for mode
     {
-        ROS_WARN_THROTTLE(5, "Received joint command with incorrect size.");
+        rclcpp::Clock::SharedPtr clock = this->get_clock();
+        RCLCPP_WARN_THROTTLE(this->get_logger(), *clock, 0.1, "Received joint command with incorrect size.");  // ROS_WARN_THROTTLE(5, "Received joint command with incorrect size.");
         return;
     }
     else
@@ -416,7 +420,8 @@ void MujocoInterface::joint_command_callback(const std_msgs::Float64MultiArray::
             }
             default:
             {
-                ROS_WARN_THROTTLE(5, "Unknown control mode.");
+                rclcpp::Clock::SharedPtr clock = this->get_clock();
+                RCLCPP_WARN_THROTTLE(this->get_logger(), *clock, 5, "Unknown control mode.");
                 break;
             }
         }

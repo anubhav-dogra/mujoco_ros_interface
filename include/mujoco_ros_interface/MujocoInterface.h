@@ -1,7 +1,7 @@
 /**
  * @file   MuJoCoInterface.h
- * @author Jon Woolfrey
- * @data   August 2024
+ * @author Anubhav Dogra
+ * @data   December 2024
  * @brief  A class for connecting a MuJoCo simulation with ROS2.
  */
  
@@ -11,20 +11,20 @@
 #include <GLFW/glfw3.h>                                                                             // Graphics Library Framework; for visualisation
 #include <iostream>                                                                                 // std::cerr, std::cout
 #include <mujoco/mujoco.h>                                                                          // Dynamic simulation library
-#include <ros/ros.h>                                                                        // ROS2 C++ libraries.
-#include <sensor_msgs/JointState.h>                                                          // For publishing / subscribing to joint states.
-#include <std_msgs/Float64MultiArray.h>                                                         // For subscribing to joint commands>
-#include <geometry_msgs/PoseStamped.h> 
-#include <geometry_msgs/WrenchStamped.h> 
+#include "rclcpp/rclcpp.hpp"                                                                        // ROS2 C++ libraries.
+#include <sensor_msgs/msg/joint_state.hpp>                                                          // For publishing / subscribing to joint states.
+#include <std_msgs/msg/float64_multi_array.hpp>                                                         // For subscribing to joint commands>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <geometry_msgs/msg/wrench_stamped.hpp>
 #include <thread>
 #include <mutex>                                              
 
  enum ControlMode {POSITION, VELOCITY, TORQUE, UNKNOWN};                                            // This needs a global scope
         
 /**
- * This class launches both a MuJoCo simulation, and ROS1 node for communication.
+ * This class launches both a MuJoCo simulation, and ROS2 node for communication.
  */
-class MujocoInterface {
+class MujocoInterface : public rclcpp::Node {
     public:
             
         /**
@@ -100,7 +100,19 @@ class MujocoInterface {
 
     private:
 
-        ros::NodeHandle _nh;
+        rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr _jointStatePublisherPtr;
+        rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr _endeffectorPosePublisherPtr;
+        rclcpp::Publisher<geometry_msgs::msg::WrenchStamped>::SharedPtr _f_t_sensorPublisherPtr;
+        rclcpp::Subscription<std_msgs::msg::Float64MultiArray>::SharedPtr _jointCommandSubscriberPtr;
+        
+        rclcpp::TimerBase::SharedPtr _simTimer, _visTimer;  
+
+        rclcpp::Clock clock;
+
+        sensor_msgs::msg::JointState _jointStateMessage;
+        geometry_msgs::msg::PoseStamped _endeffectorPoseMessage;
+        geometry_msgs::msg::WrenchStamped _f_t_sensorMessage;
+
         ControlMode _controlMode;
 
         mjModel *_model;                                                                            ///< Underlying model of the robot.
@@ -114,17 +126,6 @@ class MujocoInterface {
         mjrContext _context;                                                                        ///< No idea what this does.
 
         GLFWwindow *_window;                                                                        ///< This displays the robot and environment.
-
-        ros::Publisher _jointStatePublisher;            ///< As it says on the label
-        ros::Publisher _endeffectorPosePublisher;       ///< As it says on the label
-        ros::Publisher _f_t_sensorPublisher;
-        ros::Subscriber _jointCommandSubscriber;  ///< Subscriber for joint commands
-        
-        ros::Timer _simTimer, _visTimer;                                          ///< Regulates the ROS2 node
-
-        sensor_msgs::JointState _jointStateMessage;                                            ///< For publishing joint state data over ROS2
-        geometry_msgs::PoseStamped _endeffectorPoseMessage;                                     ///< For publishing end effector pose data over ROS2
-        geometry_msgs::WrenchStamped _f_t_sensorMessage;
         
         int _simFrequency = 1000;                                                                   ///< Speed at which the frequency runs
         int _endeffector_bodyId;
@@ -159,20 +160,20 @@ class MujocoInterface {
          * Updates the robot state, publishes joint state information.
          */
         void
-        update_simulation(const ros::TimerEvent&);
+        update_simulation();
         
         /**
          * Updates the visualisation.
          */
         void
-        update_visualization(const ros::TimerEvent&);
+        update_visualization();
         
         /**
          * Callback function to handle incoming joint commands.
          * @param msg The message containing joint commands.
          */
         void 
-        joint_command_callback(const std_msgs::Float64MultiArray::ConstPtr msg);
+        joint_command_callback(const std_msgs::msg::Float64MultiArray::SharedPtr msg);
 
         /**
          * Callback function to compute gravity torques and updates the simulation.

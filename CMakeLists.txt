@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.5)
 project(mujoco_ros_interface)
 
 # Default to C++17
@@ -7,64 +7,53 @@ if(NOT CMAKE_CXX_STANDARD)
 endif()
 
 # Find dependencies
-find_package(catkin REQUIRED COMPONENTS
-  roscpp                                                # ROS1 equivalent to rclcpp
-  sensor_msgs                                           # sensor_msgs::JointState
-  std_msgs                                              # std_msgs::Float64MultiArray
-  controller_manager                                    # controller_manager::ControllerManager
-  tf2_ros
-  )
-
-find_package(glfw3 REQUIRED)                            # Graphics Library FrameWork
-
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
+# find_package(controller_manager REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(glfw3 REQUIRED) # Graphics Library Framework
 # MuJoCo
-set(MUJOCO_PATH "/home/terabotics/mujoco_ws/src/mujoco/mujoco-3.2.3")             # UPDATE THIS TO YOUR MUJOCO PATH
-include_directories(include                           # Local header files
-            ${catkin_INCLUDE_DIRS}
+set(MUJOCO_PATH "/opt/mujoco/mujoco-3.2.6")             # UPDATE THIS TO YOUR MUJOCO PATH
+include_directories(
+            include                           # Local header files
             ${MUJOCO_PATH}/include/mujoco               # MuJoCo header files
             ${MUJOCO_PATH}/include                      # Additional MuJoCo header files
 )
 link_directories(${MUJOCO_PATH}/lib)                    # Location of MuJoCo libraries
 
-# Declare a catkin package
-catkin_package(
-  CATKIN_DEPENDS roscpp sensor_msgs std_msgs
-)
 # Build the library (hardware interface)
-add_library(mujoco_hw_interface
-             src/mujoco_hw_interface.cpp)
+# add_library(mujoco_hw_interface
+#              src/mujoco_hw_interface.cpp)
 
 # Build the executable
 add_executable(mujoco_interface_node src/mujoco_interface_node.cpp
                                      src/MujocoInterface.cpp)
 
-add_executable(iiwa src/mujoco_hw_interface_node.cpp)
+# add_executable(iiwa src/mujoco_hw_interface_node.cpp)
+                          
+# target_link_libraries(mujoco_hw_interface ${catkin_LIBRARIES})
+target_link_libraries(mujoco_interface_node mujoco glfw)
+# target_link_libraries(iiwa mujoco_hw_interface ${catkin_LIBRARIES})
 
-add_executable(contact_force_control src/contact_force_control.cpp)
+ament_target_dependencies(mujoco_interface_node
+  rclcpp
+  sensor_msgs
+  std_msgs
+  # controller_manager
+  tf2_ros
+  glfw3)
+# Install targets
 
-                                     
-target_link_libraries(mujoco_hw_interface ${catkin_LIBRARIES})
-target_link_libraries(mujoco_interface_node mujoco glfw ${catkin_LIBRARIES})
-target_link_libraries(iiwa mujoco_hw_interface ${catkin_LIBRARIES})
-target_link_libraries(contact_force_control ${catkin_LIBRARIES})
+install(TARGETS
+   mujoco_interface_node
+  DESTINATION lib/${PROJECT_NAME})
 
-add_dependencies(mujoco_hw_interface ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-# Specify additional locations of header files
-include_directories(
-  include 
-  ${catkin_INCLUDE_DIRS})
+install(DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME}/launch)
 
-catkin_install_python(PROGRAMS
-  scripts/grav_comp.py
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+install(DIRECTORY config
+  DESTINATION share/${PROJECT_NAME}/config)
 
-# Install rules
-# install(TARGETS mujoco_interface_node
-#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-
-# install(DIRECTORY launch
-#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch)
-
-# install(DIRECTORY config
-#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config)
+ament_package()

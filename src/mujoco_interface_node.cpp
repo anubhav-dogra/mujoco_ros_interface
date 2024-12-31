@@ -5,7 +5,7 @@
  * @brief  Creates a ROS2 node that interfaces with a MuJoCo simulation.
  */
 
-#include <mujoco_ros_interface/MujocoInterface.h>
+#include "mujoco_ros_interface/MujocoInterface.h"
 #include <iostream>
 
 int main(int argc, char *argv[])
@@ -18,13 +18,13 @@ int main(int argc, char *argv[])
 
     int simulationFrequency    = node->declare_parameter<int>("simulation_frequency", 500);
     int visualizationFrequency = node->declare_parameter<int>("visualization_frequency", 20);
-    std::string xmlLocation    = node->declare_parameter<std::string>("xml", "/home/ros/ros2_ws/src/mujoco_ros_interface/test/iiwa14_new.xml");
-    std::string controlMode    = node->declare_parameter<std::string>("mode", "TORQUE");
+    std::string xmlLocation    = node->declare_parameter<std::string>("xml", "");
+    std::string controlMode    = node->declare_parameter<std::string>("control_mode", "TORQUE");
     std::string publisherName  = node->declare_parameter<std::string>("publisher_name", "joint_states");
     std::string subscriberName = node->declare_parameter<std::string>("subscriber_name", "joint_commands");
     std::string endEffectorName = node->declare_parameter<std::string>("end_effector_name", "tool_link_ee");
-    std::string pluginDirectory = node->declare_parameter<std::string>("plugin_directory", "opt/mujoco/mujoco-3.2.6/bin");
-    std::string endEffectorState_publisherName = node->declare_parameter<std::string>("eef_state_publisher_name", "eef_pose");
+    std::string pluginDirectory = node->declare_parameter<std::string>("plugin_directory", "/opt/mujoco/mujoco-3.2.6/bin");
+    std::string endEffectorState_publisherName = node->declare_parameter<std::string>("end_effector_state_publisher_name", "eef_pose");
 
     // Load camera parameters
     std::vector<double> camera_focal_point = node->declare_parameter<std::vector<double>>("camera_focal_point", {0.0, 0.0, 0.0});

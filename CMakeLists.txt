@@ -48,12 +48,19 @@ ament_target_dependencies(mujoco_interface_node
 
 install(TARGETS
    mujoco_interface_node
-  DESTINATION lib/${PROJECT_NAME})
+  DESTINATION lib/${PROJECT_NAME}
+  )
 
 install(DIRECTORY launch
-  DESTINATION share/${PROJECT_NAME}/launch)
+  DESTINATION share/${PROJECT_NAME}
+  )
 
 install(DIRECTORY config
-  DESTINATION share/${PROJECT_NAME}/config)
+  DESTINATION share/${PROJECT_NAME}
+  )
+
+install(DIRECTORY test
+  DESTINATION share/${PROJECT_NAME}
+  )
 
 ament_package()

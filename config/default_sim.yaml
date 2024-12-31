@@ -3,7 +3,7 @@ mujoco_interface_node:
     publisher_name: 'joint_states'
     end_effector_state_publisher_name: 'eef_pose'
     subscriber_name: 'joint_commands'
-    end_effector_name: 'tool_link_ee'
+    end_effector_name: 'link7'
     plugin_directory: '/opt/mujoco/mujoco-3.2.3/bin/mujoco_plugin'
     simulation_frequency: 500
     visualization_frequency: 20

@@ -1,6 +1,6 @@
 <mujoco model="iiwa14 scene">
-  <include file="iiwa14_new.xml"/>
-  <include file="objects.xml"/>
+  <include file="iiwa14.xml"/>
+  <!-- <include file="objects.xml"/> -->
   <!-- <include file="trampoline_flex.xml"/> -->
 
   <statistic center="0.2 0 0.2" extent="1.0"/>

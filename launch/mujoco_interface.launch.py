@@ -1,52 +1,37 @@
+import os
+from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch_ros.actions import Node
-from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
-from launch_ros.parameter_descriptions import ParameterFile
-import os
-
-curr_path = os.path.dirname(os.path.abspath(__file__))
-# get one step back from the current path
-mujoco_ros_interface_path = os.path.abspath(os.path.join(curr_path, os.pardir))
 
 def generate_launch_description():
-        xml_path_arg = DeclareLaunchArgument(
-                'xml_path',
-                default_value='/home/ros/ros2_ws/src/mujoco_ros_interface/test/iiwa14.xml',
-                description='Path to MuJoCo xml file'
-        )
 
-        # define parameter files to be loaded.
-        default_sim_params = ParameterFile(
-                "/home/ros/ros2_ws/src/mujoco_ros_interface/config/default_sim.yaml",
-                allow_substs=True
-        )
+    # Get the path to the mujoco_interface package
+    mujoco_interface_dir = get_package_share_directory('mujoco_ros_interface')
 
-        default_camera_params = ParameterFile(
-                "/home/ros/ros2_ws/src/mujoco_ros_interface/config/default_camera.yaml",
-                allow_substs=True
-        )
+    # Load config files
+    config_dir      =    os.path.join(mujoco_interface_dir, 'config')
+    camera_params   =    os.path.join(config_dir, 'default_camera.yaml')
+    sim_params      =    os.path.join(config_dir, 'default_sim.yaml')
+    control_params  =    os.path.join(config_dir, 'default_controller.yaml')
 
-        default_controller_params = ParameterFile(
-                "/home/ros/ros2_ws/src/mujoco_ros_interface/config/default_controller.yaml",
-                allow_substs=True
-        )
+    # Define the LaunchConfiguration for xml_path using the path inside mujoco_interface
+    xml = LaunchConfiguration('xml', default=os.path.join(mujoco_interface_dir, 'test/scene.xml'))
 
-        # define mujoco_ros_interface node
-        mujoco_ros_interface_node = Node(
-                package='mujoco_ros_interface',
-                executable='mujoco_interface_node',
-                name='mujoco_interface_node',
-                output='screen',
-                parameters=[
-                        {'xml_path': LaunchConfiguration('xml_path')},
-                        default_sim_params,
-                        default_camera_params,
-                        default_controller_params
-                ]
+    return LaunchDescription([
+        # Node configuration
+        Node
+        (
+            package    = 'mujoco_ros_interface',
+            executable = 'mujoco_interface_node',
+            output     = 'screen',
+            parameters =
+            [
+                {'xml': xml},
+                camera_params,
+                sim_params,
+                control_params
+                
+            ]
         )
-
-        return LaunchDescription([
-                xml_path_arg,
-                mujoco_ros_interface_node
-        ])
+    ])

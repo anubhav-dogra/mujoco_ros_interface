@@ -41,7 +41,7 @@ MujocoInterface::MujocoInterface(const std::string &xmlLocation,
         rclcpp::shutdown();
         return;
     }
-
+    _model->opt.timestep = 1.0 / _simFrequency; // Update timestep to match simulation frequency
     _jointState = mj_makeData(_model);  // Initialize joint state
 
     //set intial state with the keyframe mechanism from xml
@@ -53,14 +53,7 @@ MujocoInterface::MujocoInterface(const std::string &xmlLocation,
     _jointStateMessage.position.resize(_model->nu);
     _jointStateMessage.velocity.resize(_model->nu);
     _jointStateMessage.effort.resize(_model->nu);
-    _error.resize(_model->nu);
-    _errorDerivative.resize(_model->nu);
-    _errorIntegral.resize(_model->nu);
-    
-    _referencePosition.resize(_model->nu, 0.0);
 
-    _referenceTorque.resize(_model->nu, 0.0);
-    _referenceTorqueSim.resize(_model->nu, 0.0);
     // end_effector body id
     _endeffector_bodyId = mj_name2id(_model, mjOBJ_BODY, endEffectorName.c_str()); // later to be replace with site! 
 
@@ -125,8 +118,10 @@ MujocoInterface::MujocoInterface(const std::string &xmlLocation,
     // mjcb_control = MujocoInterface::controlCallback;
 
     // Create timers
-    _simTimer = this->create_wall_timer(std::chrono::milliseconds(static_cast<int>(1000 / simulationFrequency)), std::bind(&MujocoInterface::update_simulation, this));
-    _visTimer = this->create_wall_timer(std::chrono::milliseconds(static_cast<int>(1000 / visualizationFrequency)), std::bind(&MujocoInterface::update_visualization, this));
+    _simTimer = this->create_wall_timer(std::chrono::milliseconds(static_cast<int>(1000 / simulationFrequency))
+                                        , std::bind(&MujocoInterface::update_simulation, this));
+    _visTimer = this->create_wall_timer(std::chrono::milliseconds(static_cast<int>(1000 / visualizationFrequency))
+                                        , std::bind(&MujocoInterface::update_visualization, this));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -149,27 +144,6 @@ MujocoInterface::~MujocoInterface()
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-//                               Set the gains for feedback control                               //
-////////////////////////////////////////////////////////////////////////////////////////////////////
-bool MujocoInterface::set_feedback_gains(const double &proportional,
-                                         const double &integral,
-                                         const double &derivative)
-{
-    if(proportional < 0 or integral < 0 or derivative < 0)
-    {
-        RCLCPP_WARN(this->get_logger(), "Gains cannot be negative.");
-        return false;
-    }
-    else
-    {
-        _proportionalGain = proportional;
-        _derivativeGain   = derivative;
-        _integralGain     = integral;
-        return true;
-    }
-}          
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
 //                          Sets camera viewing position & angle                                  //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void MujocoInterface::set_camera_properties(const std::array<double, 3> &focalPoint,
@@ -187,69 +161,7 @@ void MujocoInterface::set_camera_properties(const std::array<double, 3> &focalPo
     _camera.orthographic = orthographic;
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-                        // get info for harware interface
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-int MujocoInterface::getNumberOfJoints() const
-{
-    return _model->njnt;
-}
-
-std::vector<std::string> MujocoInterface::getJointNames() const
-{
-    std::vector<std::string> jointNames;
-    for (int i = 0; i < _model->njnt; i++) {
-        jointNames.push_back(mj_id2name(_model, mjOBJ_JOINT, i));
-    }
-    return jointNames;
-}
-std::vector<double> MujocoInterface::getJointPositions()
-{
-    // mj_step(_model, _jointState);
-    std::vector<double> jointPositions;
-    for (int i = 0; i < _model->nu; i++) {
-        jointPositions.push_back(_jointState->qpos[i]);  // Use qpos for joint positions
-    }
-    return jointPositions;
-}
-std::vector<double> MujocoInterface::getJointVelocities()
-{
-    // mj_step(_model, _jointState);
-    std::vector<double> jointVelocities;
-    for (int i = 0; i < _model->nv; i++) {
-        jointVelocities.push_back(_jointState->qvel[i]);  // Use qvel for joint velocities
-    }
-    return jointVelocities;
-}
-std::vector<double> MujocoInterface::getJointEfforts()
-{
-    // mj_step(_model, _jointState);
-    std::vector<double> jointEfforts;
-    for (int i = 0; i < _model->nu; i++) {
-        jointEfforts.push_back(_jointState->actuator_force[i]);  // Use qfrc_actuators for torques
-    }
-    return jointEfforts;
-}
-
-// DOUBT::: Remove or modify the callback for joint commands if it's redundant
-// with the ros_control framework, which will take over control.
-void MujocoInterface::setJointCommands(const std::vector<double>& efforts)
-{
-    // mj_step(_model, _jointState);
-    if (efforts.size() != _model->nu) {
-        RCLCPP_WARN(this->get_logger(), "Size of efforts vector does not match the number of actuated joints.");
-        return;
-    }
-    // std::cout << "command_recieved" << efforts[1] <<std::endl;
-    for (int i = 0; i < _model->nu; i++) {
-        _referenceTorque[i] = efforts[i];
-        
-        // _jointState->ctrl[i] = efforts[i];  // Apply efforts (torques) to the actuators
-    }
-}
-
 //                                    Update the simulation                                       //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void MujocoInterface::update_simulation()
@@ -261,66 +173,15 @@ void MujocoInterface::update_simulation()
         return;
     }
     
-    // Compute control input based on mode
-    switch(_controlMode)
+   // NEED TO CHECK AGAIN!
+    if (_controlMode == TORQUE)
     {
-        case POSITION:
-        case VELOCITY:
-        {
-            for(int i = 0; i < _model->nu; i++)
-            {     
-                double error = _referencePosition[i] - _jointState->qpos[i];                         // Position error
-
-                _errorIntegral[i] += error / (double)_simFrequency;                                 // Cumulative error
-
-                double errorDerivative = (error - _error[i]) * _simFrequency;                       // Change in error over time
-
-                _jointState->ctrl[i] = _proportionalGain * error
-                                     + _integralGain * _errorIntegral[i]
-                                     + _derivativeGain * errorDerivative;                           // Apply PID control
-
-                _error[i] = error;                                                                  // Update error for next iteration           
-            }  
-            break;
-        }
-        case TORQUE:
-        {
-            // // No need to do anything as control has been set in command callback function.
-            // break;
-
-            // mjtNum gravity_torques[_model->nv];
-
-            // // Compute gravity torques (velocities and accelerations are set to zero)
-            // mjtNum zero[_model->nv] = {0};
-            // mj_rne(_model, _jointState, 0, gravity_torques);
-
-            // qfrc_bias = gravity_torques+coriolis component;
-            if (_referenceTorque.empty())
-            {
-                
-                for (int i = 0; i < _model->nv; i++) _jointState->ctrl[i] = _jointState->qfrc_bias[i];  // gravity torques. +  coriolis is qdot is there
-            }
-            else
-            {   
-                for (int i = 0; i < _model->nu; i++) _jointState->ctrl[i] = _jointState->qfrc_bias[i]+_referenceTorque[i];  // Assuming _jointState->ctrl[i] contains additional torques
-            }
-            // std::cout << _jointState->ctrl[0] << std::endl;
-            break;
-            
-
-        }
-        default:
-        {
-            for(int i = 0; i < _model->nu; i++) _jointState->ctrl[i] = 0.0;     
-            rclcpp::Clock::SharedPtr clock = this->get_clock();                    // Don't move?
-            RCLCPP_WARN_THROTTLE(this->get_logger(), *clock, 0.1, "Unknown control mode.");
-            break;
-        }
+        for (int i = 0; i < _model->nu; i++) _jointState->ctrl[i] = _jointState->qfrc_bias[i];
     }
     // std::cout << "Before mj_step: " << _jointState->qpos[0] << std::endl;
     mj_step(_model, _jointState);  // Take a step in the simulation
     // std::cout << "After mj_step: " << _jointState->qpos[0] << std::endl;
-    // Add joint state data to ROS1 message, then publish
+    // Add joint state data to ROS2 message, then publish
     _jointStateMessage.header.stamp = clock.now();
     _jointStateMessage.header.frame_id = "world";
     for(int i = 0; i < _model->nu; i++)
@@ -401,12 +262,12 @@ void MujocoInterface::joint_command_callback(const std_msgs::msg::Float64MultiAr
         {
             case POSITION:
             {
-                for(int i = 0; i < _model->nu; i++) _referencePosition[i] = msg->data[i];  // Assign new reference position
+                for(int i = 0; i < _model->nu; i++) _jointState->ctrl[i] = msg->data[i];  // Assign new reference position
                 break;
             }
             case VELOCITY:
             {
-                for(int i = 0; i < _model->nu; i++) _referencePosition[i] += msg->data[i] / (double)_simFrequency;  // Integrate velocity to get position
+                for(int i = 0; i < _model->nu; i++) _jointState->ctrl[i] += msg->data[i] / (double)_simFrequency;  // Integrate velocity to get position
                 break;
             }
             case TORQUE:
@@ -414,7 +275,7 @@ void MujocoInterface::joint_command_callback(const std_msgs::msg::Float64MultiAr
                 // for(int i = 0; i < _model->nu; i++) _jointState->ctrl[i] = msg->data[i];  // Assign control inputs directly
                 // break;
 
-                for(int i = 0; i < _model->nu; i++) _referenceTorque[i] = msg->data[i];  // Assign control inputs directly
+                for(int i = 0; i < _model->nu; i++) _jointState->ctrl[i] = msg->data[i];  // Assign control inputs directly
                 break;
 
             }

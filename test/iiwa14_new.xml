@@ -9,8 +9,8 @@
     <default class="iiwa">
       <material specular="0.5" shininess="0.25"/>
       <joint axis="0 0 1"/>
-      <!-- <general gaintype="fixed" biastype="affine" gainprm="2000" biasprm="0 -2000 -200"/>  -->
-      <general dyntype="none" gaintype="fixed" biastype="none" dynprm="1 0 0" gainprm="1 0 0" biasprm="0 0 0"/>
+      <general gaintype="fixed" biastype="affine" gainprm="2000" biasprm="0 -2000 -200"/> 
+      <!-- <general dyntype="none" gaintype="fixed" biastype="none" dynprm="1 0 0" gainprm="1 0 0" biasprm="0 0 0"/> -->
       <default class="joint1">
         <joint type="hinge" range="-2.96706 2.96706" damping="10." />
         <general ctrllimited="true" />
@@ -213,6 +213,6 @@
 
   <keyframe>
     <!-- <key name="home" qpos="0.1577 -0.6797 -0.25217 1.3539 3.313 1.129 -1.68599" ctrl="0.0 0.0 0.0 0.0 0.0 0.0 0.0"/> -->
-    <!-- <key name="home" qpos="-0.88 0.5327 -1.8212 1.4725 -0.5148 -1.53 -1.1465" ctrl="0.0 0.0 0.0 0.0 0.0 0.0 0.0"/> -->
+    <key name="home" qpos="-0.88 0.5327 -1.8212 1.4725 -0.5148 -1.53 -1.1465" ctrl="0.0 0.0 0.0 0.0 0.0 0.0 0.0"/>
   </keyframe>
 </mujoco>
